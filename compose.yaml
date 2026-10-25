@@ -1,0 +1,19 @@
+# Without GPU:  docker compose up -d
+# With GPU:     docker compose -f compose.yaml -f compose.gpu.yaml up -d
+services:
+  ros:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: ros2-trial:jazzy
+    # noVNC listens on port 80 in the container. Bound to localhost only;
+    # from another machine, reach it through an SSH tunnel.
+    ports:
+      - "127.0.0.1:6080:80"
+    shm_size: 512m
+    environment:
+      # GUI apps started with `docker compose exec` appear on the noVNC desktop.
+      DISPLAY: ":1"
+    # Mounted outside /home/ubuntu: the image's entrypoint chowns everything under HOME.
+    volumes:
+      - ./:/ws
