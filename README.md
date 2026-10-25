@@ -29,7 +29,7 @@ ROS 2・Gazebo・ロボットのパッケージをすべて Docker の中に入�
 ### 1.2 コンテナを起動する
 
 リポジトリの直下で次を実行します。
-初回はイメージの作成に時間がかかります。
+初回はイメージの作成に時間がかかります（2026-10-25 に GPU マシンで約 15 分。ディスクを約 13 GB 使った）。
 
 ```bash
 docker compose build
@@ -69,7 +69,10 @@ docker compose exec -u ubuntu ros bash -l
 ## 2. 動かし方
 
 今は、CRANE+ V2 の公式パッケージにある例を動かせる状態です。
+カメラで机の上の赤いキューブを見つけ、腕で掴んで、腕の右側に置きます。
+
 1.4 の方法で端末を 2 つ開き、それぞれで次を実行します。
+端末 2 は、端末 1 で Gazebo と RViz の画面が出て、腕の制御の準備が終わってから（起動から 20 秒ほど）実行します。
 
 ```bash
 # 端末 1: 赤いキューブを置いたワールドを、カメラ付きで起動する
@@ -78,6 +81,13 @@ ros2 launch crane_plus_gazebo crane_plus_with_red_cube.launch.py use_camera:=tru
 # 端末 2: 赤い物体を探すノードと、掴むノードを起動する
 ros2 launch crane_plus_examples_py camera_example.launch.py example:='color_detection' use_sim_time:=true
 ```
+
+端末 2 を実行すると、腕は待機の姿勢に移り、キューブが 3 秒止まって見えた時点で掴みに行きます。
+置き終わるまで 1 分ほどです。
+RViz の右側には、カメラ画像と、赤い領域を白く塗った画像が出ます。
+
+置いたキューブはカメラの視野から外れるので、腕は待機の姿勢のまま止まります。
+もう一度見るには、両方の端末を Ctrl+C で止めてから起動し直します。
 
 ## 3. 使っているもの
 
@@ -89,3 +99,6 @@ ros2 launch crane_plus_examples_py camera_example.launch.py example:='color_dete
 
 ROS 2 は、最新の長期サポート版の Lyrical ではなく Jazzy を使っています。
 CRANE+ V2 の ROS 2 パッケージが Jazzy までしか対応しておらず、その中で最新の長期サポート版が Jazzy だからです。
+
+ROS 2 のノードが使う NumPy も、最新の 2 系ではなく、Jazzy の apt パッケージの 1.26 です。
+Jazzy の OpenCV や cv_bridge（ROS 2 の画像メッセージと OpenCV の画像を相互に変換する部品）が NumPy 1 系向けにビルドされており、NumPy 2 系では読み込みの時点で失敗するからです。
