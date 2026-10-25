@@ -15,10 +15,13 @@ text instruction and places it in the named box, on ROS 2 Jazzy.
   `docker compose exec -u ubuntu ros bash -lc '<command>'`.
   On the GPU machine, start the container with `-f compose.yaml -f compose.gpu.yaml`.
 - The repo is mounted at `/ws`. GUI apps open on the noVNC desktop (`DISPLAY=:1`).
-- The GPU machine has little free disk (84 GB on 2026-10-25). Keep one image; run
+- The GPU machine has little free disk (71 GB after the first image build on 2026-10-25) and
+  is shared with other projects' images and containers; never touch those. Keep one image; run
   `docker builder prune` after rebuilds; check `docker system df`.
 - Python libraries: install the latest release at install time (organization rule).
-  ROS 2 stays on Jazzy; the reason is in README §3.
+  ROS 2 stays on Jazzy, and ROS nodes stay on Jazzy's apt NumPy 1.26; the reasons are in
+  README §3. Never pip-install into the system Python anything that pulls in NumPy 2;
+  put such libraries in a venv (plan §6).
 
 ## Rules from the assignment
 

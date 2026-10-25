@@ -25,6 +25,11 @@ RUN source "/opt/ros/${ROS_DISTRO}/setup.bash" \
     && colcon build \
     && rm -rf build log
 
+# The base image pip-installs NumPy 2 into /usr/local as a dependency of websockify (noVNC).
+# It shadows the apt NumPy 1.26 that Jazzy's OpenCV, SciPy and cv_bridge are built against,
+# and the crane_plus examples crash on import. websockify also runs on NumPy 1.26.
+RUN python3 -m pip uninstall -y --break-system-packages numpy
+
 # Login shells (docker compose exec ... bash -l) read /etc/profile.d;
 # terminals opened on the noVNC desktop read /etc/bash.bashrc.
 COPY docker/ros_env.sh /etc/profile.d/ros2_trial.sh
