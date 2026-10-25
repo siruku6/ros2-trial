@@ -146,32 +146,19 @@ GPU マシンの空きは 84 GB です（2026-10-25 の `df -h`、`/` の Avail�
 | Docker から GPU が見えるか | `docker run --rm --gpus all ubuntu nvidia-smi` | 見えなければ nvidia-container-toolkit を入れる（提出者の判断が要る） |
 | Docker のデータの置き場所 | `docker info --format '{{.DockerRootDir}}'` | `/` の上にあれば、3.2 の 84 GB がそのまま使える |
 | メモリ | `free -h` | 3.1 の見込みを確かめる |
-| git のコミット作者 | `git config user.name` と `git config user.email` | 5.2 で決めた名前とメールになっているか |
+| git のコミット作者 | `git config user.name` と `git config user.email` | 5.1 で決めた名前とメールアドレスになっているか |
 
-確認が済んだら、crane_plus の既存例を Gazebo で動かします。
-コマンドは crane_plus の README と launch ファイルから取りました。
-
-```bash
-# 端末 1: 赤いキューブを置いたワールドを、カメラ付きで起動する
-ros2 launch crane_plus_gazebo crane_plus_with_red_cube.launch.py use_camera:=true
-
-# 端末 2: 赤い物体を探すノードと、掴むノードを起動する
-ros2 launch crane_plus_examples_py camera_example.launch.py example:='color_detection' use_sim_time:=true
-```
+確認が済んだら、[README](../../README.md) の 1 章の手順で Docker イメージを作り、2 章の手順で crane_plus の既存例を Gazebo で動かします。
+Docker の構成ファイル（`docker/Dockerfile`、`compose.yaml`、`compose.gpu.yaml`）は 10/25 に Mac で書きました。
+Mac では Docker の仮想ディスクの空きが少なかったので、イメージは作っていません。
+そのため、GPU マシンでの初回のビルドが、構成ファイルの最初の動作確認になります。
 
 Gazebo 上で赤いキューブを掴めたら、環境構築は終わりです。
 
 ### 3.4 画面の見方
 
-GPU マシンにはモニタがないので、Docker の中の画面をブラウザで見ます。
-Docker イメージに入っている noVNC（ブラウザから画面を操作する仕組み）を使います。
-
-```bash
-# 提出者の Mac で実行する。GPU マシンの 6080 番ポートを、Mac の 6080 番ポートにつなぐ
-ssh -L 6080:localhost:6080 <GPU マシン>
-```
-
-つないだあと、Mac のブラウザで `http://localhost:6080` を開きます。
+GPU マシンにはモニタがないので、Docker の中の画面を、提出者の Mac のブラウザから noVNC で見ます。
+つなぎ方は [README](../../README.md) の 1.3 にあります。
 
 ## 4. 日程と分担
 
@@ -204,12 +191,18 @@ ffmpeg での録画がうまくいかなければ、提出者が Mac で noVNC �
 | 本命の案 | 案 A | 2.1 のとおり |
 | 画面の見方 | noVNC を SSH 経由でブラウザから見る | GPU マシンはモニタのない遠隔マシン |
 | 分担 | 開発は Claude。提出者は理解・検討・判断・動作確認に 5〜10 時間 | 提出者の時間を判断に使うため |
+| git のコミット作者 | 名前 `siruku6`、メールアドレス `12032476+siruku6@users.noreply.github.com`（GitHub が用意する匿名のアドレス）。最初のコミットも書き換えて main に強制 push 済み | 課題は提出物に氏名とメールアドレスを載せることを禁じている。public リポジトリでは、コミット履歴に作者の名前とメールアドレスが残る |
+
+git の作者の設定はクローンごとに要るので、GPU マシンでクローンしたら次を実行します。
+
+```bash
+git config --local user.name siruku6
+git config --local user.email 12032476+siruku6@users.noreply.github.com
+```
 
 ### 5.2 まだ決まっていないこと
 
-| 項目 | 選択肢 | 推奨 |
-|---|---|---|
-| git のコミット作者 | (1) 今の設定のまま。GPU マシン側の設定は未確認、(2) このリポジトリだけ GitHub のアカウント名と、GitHub が用意する匿名のメールアドレス（`<ID>+<アカウント名>@users.noreply.github.com`）にする | (2)。課題は提出物に氏名とメールアドレスを載せることを禁じており、public リポジトリのコミット履歴には作者の名前とメールアドレスが残る |
+2026-10-25 の時点で、回答待ちの項目はありません。
 
 ## 6. リスクと対処
 

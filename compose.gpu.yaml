@@ -1,0 +1,12 @@
+# Overlay for the GPU machine: CUDA for the detection model, graphics for Gazebo cameras.
+services:
+  ros:
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
