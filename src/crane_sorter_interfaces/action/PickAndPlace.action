@@ -1,0 +1,14 @@
+# 机の上の物体を 1 個掴み、指定した箱に置く。
+# 物体と箱の位置は tf から読む。物体は object_<object_label>、箱は box_<box_name> という座標系になっている。
+
+# ゴール（依頼の内容）
+string object_label  # 掴む物体の名前。例: "blue"
+string box_name      # 置く箱の名前。例: "right"
+---
+# 結果
+bool success
+string message                       # 何が起きたかの説明。失敗したときはその理由
+geometry_msgs/Point object_position  # 掴みに行った物体の位置。crane_plus_base から見た値 [m]
+---
+# 途中経過
+string stage  # いまの段階。looking / approaching / grasping / carrying / releasing / returning

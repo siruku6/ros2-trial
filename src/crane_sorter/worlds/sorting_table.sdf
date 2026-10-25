@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<!--
+  rt-net/crane_plus（jazzy ブランチ、34c4584）の crane_plus_gazebo/worlds/table.sdf を元にしたファイル。
+  元のファイルは RT Corporation の作で、Apache License 2.0 で配布されている（LICENSE.crane_plus を参照）。
+  変更点: ArUco マーカー付きのキューブ（aruco_cube_0）を除いた。側面が赤く、赤い物体として誤って検出されるため。
+  箱と物体は、sim.launch.py が起動のたびに置く。
+-->
+<sdf version="1.9">
+  <world name="default">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin
+        filename="gz-sim-physics-system"
+        name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sun
+      </uri>
+    </include>
+
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground%20Plane
+      </uri>
+    </include>
+
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Table
+      </uri>
+      <pose>0.29 0 0 0 0 1.5708</pose>
+    </include>
+
+  </world>
+</sdf>

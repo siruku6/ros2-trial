@@ -15,6 +15,10 @@ text instruction and places it in the named box, on ROS 2 Jazzy.
   `docker compose exec -u ubuntu ros bash -lc '<command>'`.
   On the GPU machine, start the container with `-f compose.yaml -f compose.gpu.yaml`.
 - The repo is mounted at `/ws`. GUI apps open on the noVNC desktop (`DISPLAY=:1`).
+  Build with `cd /ws && colcon build --symlink-install`; the packages are in `src/`.
+- Stop ROS processes with SIGINT. After a SIGKILL, run `fastdds shm clean` in the container,
+  or nodes started later may fail to talk to each other. Launch logs can contain non-UTF-8
+  bytes; use `grep -a` on them.
 - The GPU machine has little free disk (71 GB after the first image build on 2026-10-25) and
   is shared with other projects' images and containers; never touch those. Keep one image; run
   `docker builder prune` after rebuilds; check `docker system df`.
