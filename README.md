@@ -37,7 +37,7 @@ ROS 2・Gazebo・ロボットのパッケージをすべて Docker の中に入�
 ### 1.2 コンテナを起動する
 
 リポジトリの直下で次を実行します。
-初回はイメージの作成に時間がかかります（2026-10-25 に GPU マシンで約 15 分。2026-10-27 に AI 版のライブラリを足して、イメージは 22.7 GB になった）。
+初回はイメージの作成に時間がかかります（2026-10-25 に GPU マシンで約 15 分。2026-10-27 に AI 版のライブラリを足して、イメージは 22.2 GB になった）。
 
 ```bash
 docker compose build
@@ -209,7 +209,7 @@ RViz の右側には、カメラ画像と、赤い領域を白く塗った画像
 | CRANE+ V2 の ROS 2 パッケージ | [rt-net/crane_plus](https://github.com/rt-net/crane_plus)（jazzy ブランチ、コミット `34c4584`） |
 | 参考にした講座のリポジトリ | [matsuolab/physicalai_pubsub](https://github.com/matsuolab/physicalai_pubsub) |
 | AI 版の検出モデル OWLv2（使っている） | [google/owlv2-base-patch16-ensemble](https://huggingface.co/google/owlv2-base-patch16-ensemble)（Apache-2.0）。[Hugging Face Transformers](https://github.com/huggingface/transformers)（Apache-2.0）で動かす |
-| 比べた検出モデル YOLO-World | `yolov8x-worldv2.pt`。[Ultralytics](https://github.com/ultralytics/ultralytics)（AGPL-3.0）で動かす |
+| 比べた検出モデル YOLO-World | `yolov8x-worldv2.pt`。[Ultralytics](https://github.com/ultralytics/ultralytics)（AGPL-3.0）で動かす。比べたあと使わないことにし、Ultralytics は Docker イメージから外した |
 | 比べたモデル CLIP | [openai/clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14)。元のリポジトリ [openai/CLIP](https://github.com/openai/CLIP) は MIT License |
 | PyTorch | [torch 2.14.1](https://pypi.org/project/torch/2.14.1/)。版は `docker/requirements-ai.txt` に固定している |
 
@@ -242,7 +242,7 @@ CRANE+ V2 の ROS 2 パッケージが Jazzy までしか対応しておらず�
 ROS 2 のノードが使う NumPy も、最新の 2 系ではなく、Jazzy の apt パッケージの 1.26 です。
 Jazzy の OpenCV や cv_bridge（ROS 2 の画像メッセージと OpenCV の画像を相互に変換する部品）が NumPy 1 系向けにビルドされており、NumPy 2 系では読み込みの時点で失敗するからです。
 
-AI 版のライブラリ（PyTorch、Transformers、Ultralytics）は、作業時点の最新版を使います（`docker/requirements-ai.txt`）。
+AI 版のライブラリ（PyTorch、Transformers、OpenCV）は、作業時点の最新版を使います（`docker/requirements-ai.txt`）。
 これらは NumPy 2 を要するので、システムの Python ではなく、Docker イメージの中の Python の仮想環境 `/opt/ai-venv` に入れています。
 AI 版の物体を探すノード（`object_detector`）だけを、この仮想環境の Python で動かします。
 仮想環境の Python からも、ROS 2 の rclpy・メッセージ・tf は使えます（2026-10-27 に確かめた）。cv_bridge は使えないので、画像の変換は NumPy で書いています。

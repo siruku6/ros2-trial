@@ -6,10 +6,10 @@ object_detector:
     labels: [red_cube, red_cuboid, blue_cube, green_cuboid]
     # 形の言い方は、検出モデルを比べたときに最もよく見分けられたもの
     prompts: [red square block, red long block, blue square block, green long block]
-    # 検出モデル。yolo_world、owlv2、clip のどれか（比べた結果は docs/design/261027_ai_detector.md）
+    # 検出モデル。owlv2 か clip（比べた結果は docs/design/261027_ai_detector.md）
     model: owlv2
     # これより点数の低い組み合わせは使わない。点数の意味はモデルごとに違い、
-    # 比べたときは yolo_world 0.05、owlv2 0.1、clip 0.3 にした
+    # 比べたときは owlv2 0.1、clip 0.3 にした
     score_threshold: 0.1
     # 枠の中心を通る視線と交わらせる平面の高さ [m]
     plane_height: 0.035

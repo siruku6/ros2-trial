@@ -11,8 +11,6 @@ AI 版の物体を探すノードである。色の範囲で探す color_detecto
 image_geometry は使わず、画像の変換と位置の計算を NumPy だけで行う。
 """
 
-import os
-from pathlib import Path
 import time
 
 from crane_sorter.camera_geometry import locate_on_plane, pixel_to_ray, rotate
@@ -43,13 +41,8 @@ class ObjectDetector(Node):
         prompts: list[str] = list(self.declare_parameter('prompts', ['red cube']).value)
         if len(labels) != len(prompts):
             raise ValueError('labels と prompts の要素数をそろえてください')
-        model: str = self.declare_parameter('model', 'yolo_world').value
-        score_threshold: float = self.declare_parameter('score_threshold', 0.05).value
-        model_cache = Path(
-            self.declare_parameter(
-                'model_cache', os.environ.get('MODEL_CACHE', '/opt/model-cache')
-            ).value
-        )
+        model: str = self.declare_parameter('model', 'owlv2').value
+        score_threshold: float = self.declare_parameter('score_threshold', 0.1).value
         device: str = self.declare_parameter('device', 'cuda').value
         self._plane_height: float = self.declare_parameter('plane_height', 0.035).value
         self._reference_frame: str = self.declare_parameter(
@@ -59,7 +52,7 @@ class ObjectDetector(Node):
 
         start = time.perf_counter()
         self._detector = create_detector(
-            model, dict(zip(labels, prompts)), score_threshold, model_cache, device
+            model, dict(zip(labels, prompts)), score_threshold, device
         )
         self._tracker = LabelTracker(labels, score_threshold)
         self.get_logger().info(
