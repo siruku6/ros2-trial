@@ -5,10 +5,13 @@ import pytest
 @pytest.mark.parametrize(
     ('text', 'expected'),
     [
-        ('青いブロックを右の箱へ', ('blue', 'right')),
-        ('赤いブロックを左の箱に入れて', ('red', 'left')),
-        ('緑のキューブを右へ', ('green', 'right')),
-        ('Put the RED block in the left box', ('red', 'left')),
+        ('青いブロックを右の箱へ', ('blue_cube', 'right')),
+        ('赤いブロックを左の箱に入れて', ('red_cube', 'left')),
+        ('緑のキューブを右へ', ('green_cube', 'right')),
+        ('Put the RED block in the left box', ('red_cube', 'left')),
+        ('赤い直方体を右の箱へ', ('red_cuboid', 'right')),
+        ('黄色いレンガを左の箱へ', ('yellow_cuboid', 'left')),
+        ('put the green brick in the right box', ('green_cuboid', 'right')),
     ],
 )
 def test_parse_instruction_finds_object_and_box(text: str, expected: tuple[str, str]) -> None:
@@ -19,8 +22,10 @@ def test_parse_instruction_finds_object_and_box(text: str, expected: tuple[str, 
     'text',
     [
         'ブロックを右の箱へ',          # 物体の色がない
+        '赤いのを右の箱へ',            # 物体の形がない
         '青いブロックを箱へ',          # 箱の向きがない
-        '赤と青のブロックを右の箱へ',  # 物体が 2 つある
+        '赤と青のブロックを右の箱へ',  # 物体の色が 2 つある
+        '赤いブロックと直方体を右の箱へ',  # 物体の形が 2 つある
         '青いブロックを右と左の箱へ',  # 箱が 2 つある
     ],
 )

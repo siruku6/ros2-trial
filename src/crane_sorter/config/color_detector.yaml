@@ -4,12 +4,13 @@
 # 赤のように色相が 0 と 179 の両端にまたがる色は、2 組並べる。
 color_detector:
   ros__parameters:
-    labels: [red, green, blue]
-    red:
+    # 物体の名前（layout.yaml の label）。色だけで探すので、同じ色の物体が 2 個あると区別できない
+    labels: [red_cube, green_cube, blue_cube]
+    red_cube:
       hsv_ranges: [0, 120, 70, 8, 255, 255, 172, 120, 70, 179, 255, 255]
-    green:
+    green_cube:
       hsv_ranges: [45, 120, 50, 85, 255, 255]
-    blue:
+    blue_cube:
       hsv_ranges: [100, 120, 50, 130, 255, 255]
     # これより小さい画素のかたまりは雑音として捨てる。5 cm のキューブはおよそ 3000 画素に写る
     min_area: 300
