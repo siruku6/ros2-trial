@@ -175,6 +175,7 @@ ros2 run rqt_image_view rqt_image_view /object_detector/detections
 ```
 
 使う検出モデルと、モデルに渡す文は、`src/crane_sorter/config/object_detector.yaml` で変えられます。
+処理を減らすため、推論は半精度で 1 秒に 2 回までにし、腕が動いている間は止めています。これらも同じファイルで変えられます（説明の 9 章）。
 
 ### 2.4 crane_plus の既存例を動かす
 

@@ -64,6 +64,13 @@ def generate_launch_description() -> LaunchDescription:
         choices=['color', 'ai'],
         description='物体を探すノード。color は色の範囲で、ai は検出モデルで探す',
     )
+    declare_object_detector_config = DeclareLaunchArgument(
+        'object_detector_config',
+        default_value=os.path.join(
+            get_package_share_directory('crane_sorter'), 'config', 'object_detector.yaml'
+        ),
+        description='AI 版の物体を探すノードの設定ファイル',
+    )
 
     moveit_config = (
         MoveItConfigsBuilder('crane_plus')
@@ -113,11 +120,7 @@ def generate_launch_description() -> LaunchDescription:
         executable='object_detector',
         output='screen',
         prefix=os.path.join(os.environ.get('AI_VENV', '/opt/ai-venv'), 'bin', 'python'),
-        parameters=[
-            os.path.join(
-                get_package_share_directory('crane_sorter'), 'config', 'object_detector.yaml'
-            ),
-        ],
+        parameters=[LaunchConfiguration('object_detector_config')],
         condition=IfCondition(EqualsSubstitution(LaunchConfiguration('detector'), 'ai')),
     )
 
@@ -125,6 +128,7 @@ def generate_launch_description() -> LaunchDescription:
         declare_loaded_description,
         declare_use_sim_time,
         declare_detector,
+        declare_object_detector_config,
         pick_and_place_server,
         color_detector,
         object_detector,
