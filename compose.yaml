@@ -17,3 +17,8 @@ services:
     # Mounted outside /home/ubuntu: the image's entrypoint chowns everything under HOME.
     volumes:
       - ./:/ws
+      # Weights of the detection models, downloaded on first use (docker/Dockerfile).
+      - model-cache:/opt/model-cache
+
+volumes:
+  model-cache:

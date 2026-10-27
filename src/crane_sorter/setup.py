@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'color_detector = crane_sorter.color_detector:main',
+            'object_detector = crane_sorter.object_detector:main',
             'pick_and_place_server = crane_sorter.pick_and_place_server:main',
             'send_instruction = crane_sorter.send_instruction:main',
         ],
