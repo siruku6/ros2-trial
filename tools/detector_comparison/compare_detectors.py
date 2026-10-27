@@ -1,4 +1,8 @@
-"""capture_dataset.py で集めた画像で、検出モデル 3 つの見分けの正しさと速さを比べる。
+"""capture_dataset.py で集めた画像で、検出モデルの見分けの正しさと速さを比べる。
+
+比べられるのは OWLv2 と CLIP。3 つめに比べた YOLO-World は使わないことにして、ライブラリを
+Docker イメージから外した（2026-10-27）。YOLO-World も含めて比べたときのコードは、
+コミット b571f66 にある。
 
 コンテナの中で、仮想環境の Python で実行する。
 
@@ -34,7 +38,7 @@ _SHAPE_PHRASINGS: dict[str, dict[str, str]] = {
     'square_long': {'cube': 'square block', 'cuboid': 'long block'},
 }
 # モデルごとの、枠を捨てる点数の下限。点数の意味はモデルごとに違う
-_SCORE_THRESHOLDS = {'yolo_world': 0.05, 'owlv2': 0.1, 'clip': 0.3}
+_SCORE_THRESHOLDS = {'owlv2': 0.1, 'clip': 0.3}
 _ANNOTATED_IMAGES = 3
 
 
@@ -49,13 +53,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('dataset_dir', type=Path)
     parser.add_argument('output_dir', type=Path)
-    parser.add_argument('--models', nargs='+', default=['yolo_world', 'owlv2', 'clip'])
+    parser.add_argument('--models', nargs='+', default=['owlv2', 'clip'])
     parser.add_argument('--phrasings', nargs='+', default=list(_SHAPE_PHRASINGS))
     parser.add_argument('--plane-height', type=float, default=0.035,
                         help='枠の中心を通る視線と交わらせる平面の高さ [m]')
     parser.add_argument('--tolerance', type=float, default=0.02,
                         help='正しく見つけたとみなす、正しい位置との水平の距離の上限 [m]')
-    parser.add_argument('--model-cache', type=Path, default=Path('/opt/model-cache'))
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -100,7 +103,7 @@ def _evaluate(
 ) -> dict:
     """1 つのモデルと言い方の組で、全部の画像を処理して結果をまとめる。"""
     load_start = time.perf_counter()
-    detector = create_detector(model, prompts, _SCORE_THRESHOLDS[model], args.model_cache)
+    detector = create_detector(model, prompts, _SCORE_THRESHOLDS[model])
     load_seconds = time.perf_counter() - load_start
     # 最初の 1 回は GPU の準備に時間がかかるので、速さの計測から外す
     detector.detect(samples[0].rgb_image)
