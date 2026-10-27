@@ -17,13 +17,19 @@ box_shape:
   color: [0.85, 0.85, 0.85]
 
 # 物体。label は tf の座標系の名前（object_<label>）と、指示の中の物体の名前に使う。
+# label は「色_形」とし、指示の解釈（instruction.py）が文から作る名前とそろえる。
+# shape は cube（キューブ）か cuboid（直方体。腕の根元から離れる向きに長い）。
 objects:
-  - label: red
+  - label: red_cube
+    shape: cube
     color: [0.8, 0.05, 0.05]
-  - label: green
+  - label: green_cube
+    shape: cube
     color: [0.05, 0.6, 0.05]
-  - label: blue
+  - label: blue_cube
+    shape: cube
     color: [0.05, 0.1, 0.8]
+# 物体の幅と高さ [m]。直方体の長さは幅の 1.6 倍
 object_size: 0.05
 
 # 物体を置く範囲。起動のたびに、この扇形の中からランダムに選ぶ。

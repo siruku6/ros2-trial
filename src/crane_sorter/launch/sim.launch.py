@@ -12,7 +12,7 @@ import random
 
 from ament_index_python.packages import get_package_share_directory
 from crane_sorter.layout import box_placements, load_layout, sample_object_placements
-from crane_sorter.world_models import box_sdf, cube_sdf
+from crane_sorter.world_models import box_sdf, object_sdf
 from launch import LaunchContext, LaunchDescription
 from launch.action import Action
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo, OpaqueFunction
@@ -86,11 +86,12 @@ def _place_boxes_and_objects(context: LaunchContext) -> list[Action]:
         actions.append(_spawn_model(f'box_{box.name}', sdf, box.x, box.y, 0.0, 0.0))
         actions.append(_box_frame_publisher(box.name, box.x, box.y))
 
-    colors = {str(spec['label']): spec['color'] for spec in layout['objects']}
+    specs = {str(spec['label']): spec for spec in layout['objects']}
     size = float(layout['object_size'])
     for placement in sample_object_placements(layout, random.Random(seed)):
         name = f'object_{placement.label}'
-        sdf = cube_sdf(name, size, colors[placement.label])
+        spec = specs[placement.label]
+        sdf = object_sdf(name, spec.get('shape', 'cube'), size, spec['color'])
         actions.append(
             _spawn_model(name, sdf, placement.x, placement.y, size / 2, placement.yaw)
         )

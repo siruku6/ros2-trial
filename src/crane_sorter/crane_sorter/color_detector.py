@@ -20,7 +20,7 @@
 #   - 色の範囲を、コードの定数ではなくパラメータで受け取る
 #   - 3 次元の位置を、カメラの高さを 0.46 m と決め打ちして求めるのをやめ、
 #     tf で読んだカメラの位置姿勢から、視線と、物体の高さに合わせた平面との交点として求める
-#   - 物体の座標系の名前を target_0 から object_<色の名前> に変えた
+#   - 物体の座標系の名前を target_0 から object_<物体の名前> に変えた
 #   - 見つけた物体に枠と名前を描いた画像を配信する
 #   - 画像の端に接している（一部しか写っていない）かたまりは、位置がずれるので捨てる
 
@@ -43,14 +43,14 @@ _BOX_COLOR = (255, 255, 0)
 class ColorDetector(Node):
     """カメラ画像から色で物体を探し、見つけた位置を tf の座標系として配信するノード。
 
-    掴む・置くを実行するノードは、この座標系（object_<色の名前>）を読んで物体の位置を知る。
+    掴む・置くを実行するノードは、この座標系（object_<物体の名前>）を読んで物体の位置を知る。
     物体を探す方法を入れ替えても、同じ名前の座標系を配信すれば、掴む側は書き換えずに済む。
     """
 
     def __init__(self) -> None:
         super().__init__('color_detector')
         self._labels: list[str] = list(
-            self.declare_parameter('labels', ['red', 'green', 'blue']).value
+            self.declare_parameter('labels', ['red_cube', 'green_cube', 'blue_cube']).value
         )
         self._hsv_ranges: dict[str, list[tuple[np.ndarray, np.ndarray]]] = {
             label: _parse_hsv_ranges(

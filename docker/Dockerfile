@@ -30,6 +30,30 @@ RUN source "/opt/ros/${ROS_DISTRO}/setup.bash" \
 # and the crane_plus examples crash on import. websockify also runs on NumPy 1.26.
 RUN python3 -m pip uninstall -y --break-system-packages numpy
 
+# The AI object detector runs on the venv's Python, so that its libraries can use NumPy 2
+# without breaking the ROS 2 nodes above. rclpy and the message packages come from /opt/ros
+# through PYTHONPATH and work with NumPy 2 (checked on 2026-10-27; cv_bridge does not).
+ENV AI_VENV=/opt/ai-venv
+COPY docker/requirements-ai.txt /tmp/requirements-ai.txt
+RUN python3 -m venv "${AI_VENV}" \
+    && "${AI_VENV}/bin/pip" install --no-cache-dir -r /tmp/requirements-ai.txt \
+    && rm /tmp/requirements-ai.txt
+
+# Model weights are downloaded on first use into this directory, which compose.yaml mounts as a
+# named volume so that they survive recreating the container.
+ENV MODEL_CACHE=/opt/model-cache
+ENV HF_HOME=${MODEL_CACHE}/huggingface
+RUN mkdir -p "${MODEL_CACHE}" && chown 1000:1000 "${MODEL_CACHE}"
+
+# Ultralytics reads its settings from YOLO_CONFIG_DIR. Its default weights directory is relative
+# to the current directory, which put CLIP weights into the repo, and it sends usage data unless
+# sync is off. Both are set here, before the first import at runtime.
+ENV YOLO_CONFIG_DIR=/opt/ultralytics
+RUN mkdir -p "${YOLO_CONFIG_DIR}" \
+    && "${AI_VENV}/bin/python" -c "from ultralytics import settings; \
+settings.update(weights_dir='${MODEL_CACHE}/ultralytics', sync=False)" \
+    && chown -R 1000:1000 "${YOLO_CONFIG_DIR}"
+
 # Login shells (docker compose exec ... bash -l) read /etc/profile.d;
 # terminals opened on the noVNC desktop read /etc/bash.bashrc.
 COPY docker/ros_env.sh /etc/profile.d/ros2_trial.sh

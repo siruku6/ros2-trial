@@ -20,8 +20,10 @@
 #   - 掴む・置くの手順と tf の読み取りは、自作の pick_and_place_server.py に移した
 #   - 置く位置と搬送の中間姿勢の定数を、左右どちらの箱にも使える形に変えた
 #   - グリッパの今の角度を読む関数を足した
+#   - 腕の動作の実行を MoveIt に断られたら、少し待って計画し直すようにした
 
 import math
+import time
 
 from crane_plus_examples_py.utils import plan_and_execute
 from geometry_msgs.msg import PoseStamped
@@ -60,6 +62,8 @@ RELEASE_HEIGHT = 0.10
 # 目標の位置姿勢の許容誤差。小さくして逆運動学の精度を上げる
 _POSITION_TOLERANCE = 0.00001
 _ORIENTATION_TOLERANCE = 0.0001
+# 腕の動作の実行を断られたときに、計画し直す前に待つ時間 [s]
+_REPLAN_WAIT_SECONDS = 0.5
 
 
 class CranePlusArm:
@@ -82,7 +86,7 @@ class CranePlusArm:
         """SRDF に定義された home 姿勢に移る。起動直後の姿勢をそろえるのに使う。"""
         self._arm.set_start_state_to_current_state()
         self._arm.set_goal_state(configuration_name='home')
-        return self._plan_and_execute(self._arm, self._arm_plan_parameters)
+        return self._plan_and_execute(self._arm, self._arm_plan_parameters, replan=True)
 
     def move_tool(
         self, x: float, y: float, z: float, roll: float, pitch: float, yaw: float
@@ -121,7 +125,7 @@ class CranePlusArm:
 
         self._arm.set_start_state_to_current_state()
         self._arm.set_goal_state(motion_plan_constraints=[goal_constraints])
-        return self._plan_and_execute(self._arm, self._arm_plan_parameters)
+        return self._plan_and_execute(self._arm, self._arm_plan_parameters, replan=True)
 
     def move_gripper(self, angle: float) -> bool:
         """グリッパを指定の角度 [rad] まで開閉する。物体に当たって止まると失敗が返ることがある。"""
@@ -161,7 +165,8 @@ class CranePlusArm:
 
     def clear_joint_constraints(self) -> None:
         """set_joint_constraints で課した可動範囲を外す。"""
-        self._arm.clear_path_constraints()
+        # PlanningComponent には条件を消す関数がないので、空の条件で置き換える
+        self._arm.set_path_constraints(Constraints())
 
     def _make_plan_parameters(self) -> PlanRequestParameters:
         """設定ファイルの ompl_rrtc の項目で、速度と加速度を最大にした計画の条件を作る。"""
@@ -198,11 +203,25 @@ class CranePlusArm:
         orientation_constraint.weight = 1.0
         return orientation_constraint
 
-    def _plan_and_execute(self, component, plan_parameters: PlanRequestParameters) -> bool:
-        """動作を計画して実行し、成否を bool で返す。"""
+    def _plan_and_execute(
+        self, component, plan_parameters: PlanRequestParameters, replan: bool = False
+    ) -> bool:
+        """動作を計画して実行し、成否を bool で返す。
+
+        replan が True なら、実行を断られたときに 1 回だけ、今の姿勢から計画し直す。
+        直前の動作のあと腕が止まりきらないうちに計画すると、計画の始点と、実行を始めるときの
+        姿勢がずれて、MoveIt が実行を断る（start point deviates from current robot state）。
+        2026-10-27 に、キューブより長い物体を運んだときに起きた。
+        """
         # 計画に失敗すると False が、実行すると ExecutionStatus が返る。後者は成功なら真になる
-        return bool(
-            plan_and_execute(
+        result = plan_and_execute(
+            self._robot, component, self._logger, single_plan_parameters=plan_parameters
+        )
+        if replan and not result and not isinstance(result, bool):
+            self._logger.warn('動作の実行に失敗したので、今の姿勢から計画し直します')
+            time.sleep(_REPLAN_WAIT_SECONDS)
+            component.set_start_state_to_current_state()
+            result = plan_and_execute(
                 self._robot, component, self._logger, single_plan_parameters=plan_parameters
             )
-        )
+        return bool(result)

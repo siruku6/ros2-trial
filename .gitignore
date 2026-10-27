@@ -222,3 +222,6 @@ __marimo__/
 # colcon (ROS 2 build tool) output
 /install/
 /log/
+
+
+tmp/
