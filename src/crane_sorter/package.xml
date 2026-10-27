@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>crane_sorter</name>
+  <version>0.1.0</version>
+  <description>Sort objects on a table into boxes with CRANE+ V2 in Gazebo</description>
+  <maintainer email="12032476+siruku6@users.noreply.github.com">siruku6</maintainer>
+  <!-- Files derived from rt-net/crane_plus keep the Apache License 2.0; see LICENSE.crane_plus. -->
+  <license>MIT</license>
+  <license>Apache-2.0</license>
+
+  <exec_depend>action_msgs</exec_depend>
+  <exec_depend>crane_plus_description</exec_depend>
+  <exec_depend>crane_plus_examples_py</exec_depend>
+  <exec_depend>crane_plus_gazebo</exec_depend>
+  <exec_depend>crane_plus_moveit_config</exec_depend>
+  <exec_depend>crane_sorter_interfaces</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>image_geometry</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>message_filters</exec_depend>
+  <exec_depend>moveit_configs_utils</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>moveit_py</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-scipy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>shape_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
