@@ -51,6 +51,8 @@ def parse_instruction(text: str) -> tuple[str, str]:
 def _find_exactly_one(text: str, vocabulary: dict[str, tuple[str, ...]], kind: str) -> str:
     """文に含まれる言葉から、名前をちょうど 1 つ選ぶ。"""
     found = [name for name, words in vocabulary.items() if any(word in text for word in words)]
-    if len(found) != 1:
-        raise ValueError(f'指示から{kind}を 1 つに決められません（候補: {found}）: {text}')
+    if not found:
+        raise ValueError(f'指示の中に、{kind}を表す知っている言葉がありません')
+    if len(found) > 1:
+        raise ValueError(f'{kind}を 1 つに決められません（候補: {found}）')
     return found[0]

@@ -129,7 +129,9 @@ ros2 run crane_sorter send_instruction "赤いブロックを右の箱へ" "青�
 ```
 
 指示には、物体の色と形、箱の向きを 1 つずつ入れます。
+指示の文は、決まった言葉の表で物体と箱の名前に変えます（`src/crane_sorter/crane_sorter/instruction.py`）。
 使える言葉は、色が「赤」「緑」「青」「黄」（red、green、blue、yellow）、形が「ブロック」「キューブ」「立方体」（block、cube）と「直方体」「レンガ」（cuboid、brick）、箱が「右」「左」（right、left）です。
+表にない言葉の指示（例: 「赤いボールを右の箱へ」）は、送る前に断ります。
 色で探す版の物体は、キューブだけです。
 左右は腕から見た向きです。Gazebo の初期の視点は腕と向かい合っているので、画面では右の箱が左側に見えます。
 指示の実行中に端末 3 で Ctrl+C を押すと、取り消しを求めます。取り消せるのは物体を掴む前だけです。
@@ -148,13 +150,14 @@ ros2 run rqt_image_view rqt_image_view /color_detector/detections
 机の上の赤いキューブ、赤い直方体、青いキューブ、緑の直方体を、文の指示どおりに左右の箱に入れます。
 赤い 2 個は色が同じなので、形まで見分ける必要があります。
 物体は、検出モデル OWLv2 で探します。
+机の奥には、掴む対象ではない赤と青の円柱も置きます。円柱があっても、指示どおりの物体を選べるかを見るためです。
 仕組みと、検出モデル 3 つを比べた結果は [docs/design/261027_ai_detector.md](docs/design/261027_ai_detector.md) にあります。
 
 2.2 と同じく端末を 3 つ開き、上から順に実行します。
 2.2 との違いは、配置の設定ファイルと、物体を探すノードの選び方です。
 
 ```bash
-# 端末 1: 物体 4 個の配置で Gazebo を起動する
+# 端末 1: 物体 4 個と円柱 2 個の配置で Gazebo を起動する
 ros2 launch crane_sorter sim.launch.py layout:=/ws/src/crane_sorter/config/layout_shapes.yaml
 
 # 端末 2: AI 版の物体を探すノードと、掴んで箱に置く action のサーバを起動する
@@ -162,8 +165,10 @@ ros2 launch crane_sorter sim.launch.py layout:=/ws/src/crane_sorter/config/layou
 ros2 launch crane_sorter sorter.launch.py detector:=ai
 
 # 端末 3: 指示を送る
-ros2 run crane_sorter send_instruction "赤い直方体を左の箱へ" "赤いブロックを右の箱へ" "青いブロックを左の箱へ" "緑の直方体を右の箱へ"
+ros2 run crane_sorter send_instruction "赤い直方体を左の箱へ" "赤い立方体を右の箱へ" "青い立方体を左の箱へ" "緑の直方体を右の箱へ"
 ```
+
+机にない物体を指示すると、腕は動かず、見つからないと答えます（例: 「黄色い立方体を左の箱へ」）。
 
 初めて起動するときは、検出モデルの重み（0.6 GB ほど）を取得するので、端末 2 の準備に数分かかります。
 重みは Docker のボリューム `model-cache` に残るので、2 回目からは取得しません。
