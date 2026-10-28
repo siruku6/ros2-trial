@@ -2,10 +2,11 @@
 
 コンテナの中で、仮想環境の Python で実行する（Pillow と PyYAML を使う）。
 
-    $AI_VENV/bin/python tools/video/edit_video.py /ws/tmp/video/take4 /ws/tmp/video/draft.mp4
+    $AI_VENV/bin/python tools/video/edit_video.py /ws/tmp/video/take6 /ws/tmp/video/draft.mp4
 
 画面の録画から Gazebo・検出結果・端末を切り出して 1 枚に並べ、いま実行している指示の文を
-字幕にする。動画の全体を同じ速さで再生する。画面に出す文字と速さは video_text.yaml にある。
+字幕にする（指示によっては、その下に一言を添える）。動画の全体を同じ速さで再生する。
+画面に出す文字と速さは video_text.yaml にある。
 """
 
 import argparse
@@ -67,11 +68,11 @@ def main() -> None:
     args = parser.parse_args()
     texts = yaml.safe_load(args.text.read_text())
     speed = float(texts['speed'])
-    instructions = read_instructions(args.take_dir)
+    instructions, finished = read_instructions(args.take_dir)
     with tempfile.TemporaryDirectory() as work:
         work_dir = Path(work)
         save(screen_base(texts), work_dir / 'base.png')
-        segments = plan_segments(instructions, texts, work_dir)
+        segments = plan_segments(instructions, finished, texts, work_dir)
         parts = [
             encode_segment(
                 args.take_dir / 'screen.mkv', segment, speed, bool(texts['show_terminal']), work_dir, k
@@ -83,24 +84,36 @@ def main() -> None:
     print(f'{args.output} を作りました（{total:.1f} 秒、{speed:g} 倍速）')
 
 
-def read_instructions(take_dir: Path) -> list[tuple[str, float, float]]:
-    """指示の記録を読み、指示ごとに（指示の文、始まり、終わり）を、録画の始まりからの秒数で返す。"""
+def read_instructions(take_dir: Path) -> tuple[list[tuple[str, float, float]], float]:
+    """指示の記録を読む。時刻は、録画の始まりからの秒数にする。
+
+    Returns
+    -------
+    instructions : list[tuple[str, float, float]]
+        指示ごとの（指示の文、始まり、終わり）。
+    finished : float
+        すべての指示を送り終え、最後の待ち時間も過ぎた時刻（記録の done の行）。
+    """
     record_start = float((take_dir / 'record_start.txt').read_text())
     instructions: list[tuple[str, float, float]] = []
+    finished = None
     for line in (take_dir / 'instructions.log').read_text().splitlines():
         stamp, _, message = line.partition(' ')
         time = float(stamp) - record_start
+        if message == 'done':
+            finished = time
+            continue
         body = message[message.find(']') + 1:].strip()
         if body.startswith('「'):
             instructions.append((body[1:body.index('」')], time, time))
         elif body.startswith(('成功', '失敗', '取り消し')) and instructions:
             text, start, _ = instructions[-1]
             instructions[-1] = (text, start, time)
-    return instructions
+    return instructions, finished if finished is not None else instructions[-1][2]
 
 
 def plan_segments(
-    instructions: list[tuple[str, float, float]], texts: dict, work_dir: Path
+    instructions: list[tuple[str, float, float]], finished: float, texts: dict, work_dir: Path
 ) -> list[Segment]:
     """動画の区切りを順に並べる。区切りごとに、録画に重ねる字幕の画像も作る。"""
     speed = float(texts['speed'])
@@ -110,18 +123,18 @@ def plan_segments(
         first_start - intro_start, save(screen_overlay(texts['title'], texts), work_dir / 'intro.png'),
         start=intro_start, fade_in=True,
     )]
-    for index, (text, start, end) in enumerate(instructions, start=1):
-        # 次の指示の始まりまでを 1 つの区切りにし、録画を切れ目なく使う
-        next_start = instructions[index][1] if index < len(instructions) else end
+    notes = texts.get('instruction_notes') or {}
+    for index, (text, start, _) in enumerate(instructions, start=1):
+        # 次の指示の始まり（最後の指示は、送り終えた時刻）までを 1 つの区切りにし、録画を切れ目なく使う
+        next_start = instructions[index][1] if index < len(instructions) else finished
         caption = texts['instruction_caption'].format(index=index, total=len(instructions), text=text)
-        overlay = save(screen_overlay(caption, texts), work_dir / f'instruction{index}.png')
+        overlay = save(screen_overlay(caption, texts, notes.get(text, '')), work_dir / f'instruction{index}.png')
         segments.append(Segment(next_start - start, overlay, start=start))
-    last_end = instructions[-1][2]
     has_end_card = bool(texts['end_card'])
     segments.append(Segment(
         texts['closing_seconds'] * speed,
         save(screen_overlay(texts['closing_caption'], texts), work_dir / 'closing.png'),
-        start=last_end, fade_out=has_end_card,
+        start=finished, fade_out=has_end_card,
     ))
     if has_end_card:
         segments.append(Segment(
@@ -173,8 +186,11 @@ def heading(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], text: str
         draw.text((box[0] + 16, (box[1] + box[3]) // 2), text, font=font(24, True), fill=_TEXT, anchor='lm')
 
 
-def screen_overlay(caption: str, texts: dict) -> Image.Image:
-    """録画の上に重ねる画像（透明の部分は録画が見える）。見出し、箱の札、速さ、字幕を描く。"""
+def screen_overlay(caption: str, texts: dict, note: str = '') -> Image.Image:
+    """録画の上に重ねる画像（透明の部分は録画が見える）。見出し、箱の札、速さ、字幕を描く。
+
+    note があれば、字幕の下の行に添える。
+    """
     image = Image.new('RGBA', _SIZE, (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
     # Gazebo の画面の左上にある道具の帯を隠し、見出しを書く
@@ -189,8 +205,11 @@ def screen_overlay(caption: str, texts: dict) -> Image.Image:
         label = texts['speed_label'].format(speed=f'{speed:g}')
         pill(draw, (1180, 48), label, 30, (*_ACCENT, 245), (20, 20, 20))
     draw.rectangle((0, _CAPTION_TOP, 1280, _SIZE[1]), fill=(*_BACKGROUND, 255))
+    middle = (_CAPTION_TOP + _SIZE[1]) // 2
     if caption:
-        draw.text((40, (_CAPTION_TOP + _SIZE[1]) // 2), caption, font=font(46, True), fill=_TEXT, anchor='lm')
+        draw.text((40, middle - 34 if note else middle), caption, font=font(46, True), fill=_TEXT, anchor='lm')
+    if note:
+        draw.text((40, middle + 40), note, font=font(36, True), fill=_ACCENT, anchor='lm')
     return image
 
 
