@@ -10,15 +10,15 @@ speed_label: '{speed}倍速'
 
 # 始めに、指示を送る前の机を見せる長さ [s]（動画の上の秒数）と、そのとき下に出す題名
 intro_seconds: 5
-title: 文の指示で、色が同じで形の違う物体を見分けて仕分ける
+title: テキスト指示に基づく同色異形物体の識別・仕分け
 
 # 指示ごとに下に出す字幕。{index} は何番目か、{total} は指示の数、{text} は指示の文
 instruction_caption: '指示 {index}/{total}「{text}」'
 # 字幕の下の行に添える一言。指示の文（record_demo.sh の instructions）ごとに書く。
 # 書かなかった指示には添えない。腕が動かない指示で、何が起きたかを伝えるのに使う
 instruction_notes:
-  黄色い立方体を左の箱へ: 机に黄色い立方体はないので、動かない
-  赤いボールを右の箱へ: 「ボール」は知らない言葉なので、動かない
+  黄色い立方体を左の箱へ: 机上に該当物体が存在しないため、動作を実行しない
+  赤いボールを右の箱へ: 「ボール」は未登録語のため、動作を実行しない
 
 # 最後の指示が終わったあとに見せる長さ [s] と、そのときの字幕
 closing_seconds: 2
@@ -26,8 +26,8 @@ closing_caption: ''
 
 # 3 つの画面の見出し
 gazebo_heading: シミュレーション（Gazebo）
-detection_heading: カメラ画像と検出結果（OWLv2）
-terminal_heading: 指示を送る端末
+detection_heading: カメラ画像・物体検出結果（OWLv2）
+terminal_heading: 指示送信端末
 # 指示を送る端末を出すか（true / false）
 show_terminal: true
 
