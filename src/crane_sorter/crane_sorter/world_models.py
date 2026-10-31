@@ -5,8 +5,9 @@ crane_plus_gazebo/models/aruco_cube_0/model.sdf（Apache License 2.0）から写
 既存例で掴めることが分かっているキューブと同じ物理特性にし、見た目の色だけを変えるためである。
 直方体も、質量と摩擦はキューブと同じにし、慣性だけを形の式から求める。
 
-円柱と球も試したが、Gazebo で掴めなかったので作らない（2026-10-27）。球は指が触れると
-転がり、円柱は指の間から抜けた。
+円柱と球も掴む物体として試したが、Gazebo で掴めなかった（2026-10-27）。球は指が触れると
+転がり、円柱は指の間から抜けた。円柱は、掴む対象ではない物体（layout_shapes.yaml の
+distractors）としてだけ使う。
 """
 
 # 直方体の長い辺の長さの、幅に対する比
@@ -22,7 +23,7 @@ _OBJECT_TEMPLATE = """<?xml version="1.0" ?>
     <link name="link">
       <visual name="visual">
         <geometry>
-          <box><size>{size_x} {size_y} {size_z}</size></box>
+          {geometry}
         </geometry>
         <material>
           <ambient>{red} {green} {blue} 1</ambient>
@@ -32,7 +33,7 @@ _OBJECT_TEMPLATE = """<?xml version="1.0" ?>
       </visual>
       <collision name="collision">
         <geometry>
-          <box><size>{size_x} {size_y} {size_z}</size></box>
+          {geometry}
         </geometry>
         <surface>
           <friction>
@@ -97,10 +98,10 @@ def object_sdf(name: str, shape: str, size: float, color: list[float]) -> str:
     name : str
         Gazebo の中でのモデルの名前。
     shape : str
-        形。"cube"（キューブ）か "cuboid"（直方体）。直方体は、モデルの x の向きに長く、
-        幅と高さはキューブと同じにする。
+        形。"cube"（キューブ）、"cuboid"（直方体）か "cylinder"（円柱）。直方体は、モデルの
+        x の向きに長く、幅と高さはキューブと同じにする。円柱は立てて置く。
     size : float
-        物体の幅と高さ [m]。キューブは 1 辺の長さ。
+        物体の幅と高さ [m]。キューブは 1 辺の長さ、円柱は直径と高さ。
     color : list[float]
         見た目の色（赤・緑・青、各 0〜1）。
 
@@ -115,17 +116,25 @@ def object_sdf(name: str, shape: str, size: float, color: list[float]) -> str:
         知らない形を指定したとき。
     """
     if shape == 'cube':
-        size_x = size
+        geometry = f'<box><size>{size} {size} {size}</size></box>'
         ixx = iyy = izz = _CUBE_INERTIA
     elif shape == 'cuboid':
         size_x = size * _CUBOID_LENGTH_RATIO
+        geometry = f'<box><size>{size_x} {size} {size}</size></box>'
         ixx = _OBJECT_MASS * (size**2 + size**2) / 12
         iyy = izz = _OBJECT_MASS * (size_x**2 + size**2) / 12
+    elif shape == 'cylinder':
+        radius = size / 2
+        geometry = f'<cylinder><radius>{radius}</radius><length>{size}</length></cylinder>'
+        ixx = iyy = _OBJECT_MASS * (3 * radius**2 + size**2) / 12
+        izz = _OBJECT_MASS * radius**2 / 2
     else:
-        raise ValueError(f'物体の形 {shape} は作れません。cube か cuboid を選んでください')
+        raise ValueError(
+            f'物体の形 {shape} は作れません。cube、cuboid か cylinder を選んでください'
+        )
     red, green, blue = color
     return _OBJECT_TEMPLATE.format(
-        name=name, size_x=size_x, size_y=size, size_z=size, ixx=ixx, iyy=iyy, izz=izz,
+        name=name, geometry=geometry, ixx=ixx, iyy=iyy, izz=izz,
         mass=_OBJECT_MASS, red=red, green=green, blue=blue,
     )
 

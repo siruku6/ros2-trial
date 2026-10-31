@@ -46,3 +46,25 @@ spawn_area:
   max_angle_deg: 45.0
   min_separation: 0.10    # 物体どうしの中心の距離の下限。掴むときに指が隣の物体に当たらないように
   min_box_distance: 0.15  # 物体の中心と箱の中心の距離の下限
+
+# 掴む対象ではない物体。指示では指さないが、机に置いて、検出モデルが取り違えないかを確かめる。
+# 掴む物体と同じ色で形の違う円柱にする。Gazebo では円柱を掴めないので（world_models.py）、
+# 腕の届かない範囲に置く。Gazebo のモデルの名前は distractor_<label> にする。
+distractors:
+  - label: red_cylinder
+    shape: cylinder
+    color: [0.8, 0.05, 0.05]
+  - label: blue_cylinder
+    shape: cylinder
+    color: [0.05, 0.1, 0.8]
+
+# 掴む対象ではない物体を置く範囲。腕の左奥の、腕が届かず（根元から 0.29 m より遠い）、
+# カメラの視野に収まるところ。カメラは腕の左前（x 0.11 m、y 0.10 m）の真上にある。
+# 掴む物体の範囲より 0.08 m 以上遠いので、掴むときに指が当たらない。
+distractor_area:
+  min_radius: 0.34
+  max_radius: 0.40
+  min_angle_deg: 45.0
+  max_angle_deg: 57.0
+  min_separation: 0.07
+  min_box_distance: 0.15
