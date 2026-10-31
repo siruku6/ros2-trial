@@ -43,7 +43,7 @@ def box_placements(layout: dict) -> list[BoxPlacement]:
 
 
 def sample_object_placements(
-    layout: dict, rng: random.Random, max_attempts: int = 100
+    layout: dict, rng: random.Random, max_attempts: int = 1000
 ) -> list[ObjectPlacement]:
     """物体を置く位置を、設定の範囲からランダムに、互いに離して選ぶ。
 
@@ -59,6 +59,8 @@ def sample_object_placements(
         乱数の生成器。同じ種を渡せば同じ配置になる。
     max_attempts : int
         全部の物体を置けなかったときに、最初から選び直す回数の上限。
+        物体 4 個では、100 回だと 200 通りの種のうち 23 通りで置けず、1000 回なら全部置けた
+        （2026-10-27）。
 
     Returns
     -------
