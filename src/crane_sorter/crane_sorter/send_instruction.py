@@ -78,7 +78,8 @@ def _run_one_instruction(
     try:
         object_label, box_name = parse_instruction(instruction)
     except ValueError as error:
-        print(f'{progress_label} {error}')
+        print(f'{progress_label} 「{instruction}」→ 解釈できません')
+        print(f'{progress_label} 失敗: {error}')
         return False
     print(f'{progress_label} 「{instruction}」→ 物体 {object_label} を箱 {box_name} へ')
 

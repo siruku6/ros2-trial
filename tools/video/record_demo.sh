@@ -1,6 +1,7 @@
 #!/bin/bash
 # 動画の実演の場面を録画する。
-# Gazebo と AI 版のノードを起動し、窓を並べ、画面を録画しながら 4 つの指示を送る。
+# Gazebo と AI 版のノードを起動し、窓を並べ、画面を録画しながら 6 つの指示を送る。
+# 4 つは机の上の物体の仕分け、残りの 2 つは、机にない物体と、知らない言葉の指示である。
 # コンテナの中で実行する。録画と記録は出力先のディレクトリに置く。
 #
 #   bash /ws/tools/video/record_demo.sh [出力先（既定 /ws/tmp/video/take）] [乱数の種（既定 24）]
@@ -15,14 +16,15 @@ set -m
 
 out_dir=${1:-/ws/tmp/video/take}
 seed=${2:-24}
-instructions=('赤い直方体を左の箱へ' '赤いブロックを右の箱へ' '青いブロックを左の箱へ' '緑の直方体を右の箱へ')
+instructions=('赤い直方体を左の箱へ' '赤い立方体を右の箱へ' '青い立方体を左の箱へ' '緑の直方体を右の箱へ'
+              '黄色い立方体を左の箱へ' '赤いボールを右の箱へ')
 tools_dir=$(cd "$(dirname "$0")" && pwd)
 export DISPLAY=:1
 
 # 指示を送る前に、机の上を見せる時間 [s]
 intro_seconds=15
 # 指示がすべて終わるまで待つ上限 [s]
-instruction_timeout=360
+instruction_timeout=480
 
 mkdir -p "$out_dir"
 rm -f "$out_dir"/{screen.mkv,record_start.txt,instructions.log,go}

@@ -80,11 +80,58 @@ def sample_object_placements(
     raise RuntimeError('物体を置く位置が見つかりませんでした。spawn_area の範囲を広げてください')
 
 
+def sample_distractor_placements(
+    layout: dict, objects: list[ObjectPlacement], rng: random.Random, max_attempts: int = 1000
+) -> list[ObjectPlacement]:
+    """掴む対象ではない物体（distractors）を置く位置を、distractor_area からランダムに選ぶ。
+
+    掴む物体（sample_object_placements で置いたもの）を置いたあとに、同じ乱数の生成器で選ぶ。
+    設定に distractors がなければ、空のリストを返す。
+
+    Parameters
+    ----------
+    layout : dict
+        load_layout で読んだ設定。
+    objects : list[ObjectPlacement]
+        置き済みの掴む物体。これらからも distractor_area の min_separation だけ離す。
+    rng : random.Random
+        乱数の生成器。
+    max_attempts : int
+        全部を置けなかったときに、最初から選び直す回数の上限。
+
+    Returns
+    -------
+    list[ObjectPlacement]
+        設定の distractors と同じ順の、各物体の位置と向き。
+
+    Raises
+    ------
+    RuntimeError
+        上限の回数まで選び直しても、条件を満たす配置が見つからなかったとき。
+    """
+    labels: list[str] = [str(spec['label']) for spec in layout.get('distractors', [])]
+    if not labels:
+        return []
+    for _ in range(max_attempts):
+        placements = _try_place_all(
+            labels, layout['distractor_area'], box_placements(layout), rng, objects
+        )
+        if placements is not None:
+            return placements[len(objects):]
+    raise RuntimeError(
+        '掴む対象ではない物体を置く位置が見つかりませんでした。distractor_area の範囲を広げてください'
+    )
+
+
 def _try_place_all(
-    labels: list[str], area: dict, boxes: list[BoxPlacement], rng: random.Random
+    labels: list[str],
+    area: dict,
+    boxes: list[BoxPlacement],
+    rng: random.Random,
+    placed: list[ObjectPlacement] | None = None,
 ) -> list[ObjectPlacement] | None:
-    """全部の物体を 1 個ずつ置いてみる。途中で置けなくなったら None を返す。"""
-    placements: list[ObjectPlacement] = []
+    """物体を 1 個ずつ、置き済みの物体（placed）に足していく。置けなくなったら None を返す。"""
+    placements: list[ObjectPlacement] = list(placed or [])
     for label in labels:
         placement = _try_place_one(label, area, boxes, placements, rng)
         if placement is None:
