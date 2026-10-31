@@ -11,7 +11,9 @@ import os
 import random
 
 from ament_index_python.packages import get_package_share_directory
-from crane_sorter.layout import box_placements, load_layout, sample_object_placements
+from crane_sorter.layout import (
+    box_placements, load_layout, sample_distractor_placements, sample_object_placements
+)
 from crane_sorter.world_models import box_sdf, object_sdf
 from launch import LaunchContext, LaunchDescription
 from launch.action import Action
@@ -86,18 +88,24 @@ def _place_boxes_and_objects(context: LaunchContext) -> list[Action]:
         actions.append(_spawn_model(f'box_{box.name}', sdf, box.x, box.y, 0.0, 0.0))
         actions.append(_box_frame_publisher(box.name, box.x, box.y))
 
-    specs = {str(spec['label']): spec for spec in layout['objects']}
+    rng = random.Random(seed)
+    objects = sample_object_placements(layout, rng)
+    distractors = sample_distractor_placements(layout, objects, rng)
     size = float(layout['object_size'])
-    for placement in sample_object_placements(layout, random.Random(seed)):
-        name = f'object_{placement.label}'
-        spec = specs[placement.label]
-        sdf = object_sdf(name, spec.get('shape', 'cube'), size, spec['color'])
-        actions.append(
-            _spawn_model(name, sdf, placement.x, placement.y, size / 2, placement.yaw)
-        )
-        actions.append(
-            LogInfo(msg=f'{name}: x={placement.x:.3f} y={placement.y:.3f} (crane_plus_base)')
-        )
+    # 位置は設定と同じ順に並んでいる。掴む対象ではない物体は、モデルの名前で区別する
+    for prefix, specs, placements in (
+        ('object', layout['objects'], objects),
+        ('distractor', layout.get('distractors', []), distractors),
+    ):
+        for spec, placement in zip(specs, placements):
+            name = f'{prefix}_{placement.label}'
+            sdf = object_sdf(name, spec.get('shape', 'cube'), size, spec['color'])
+            actions.append(
+                _spawn_model(name, sdf, placement.x, placement.y, size / 2, placement.yaw)
+            )
+            actions.append(
+                LogInfo(msg=f'{name}: x={placement.x:.3f} y={placement.y:.3f} (crane_plus_base)')
+            )
     return actions
 
 

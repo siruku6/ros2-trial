@@ -2,7 +2,9 @@ import math
 from pathlib import Path
 import random
 
-from crane_sorter.layout import box_placements, load_layout, sample_object_placements
+from crane_sorter.layout import (
+    box_placements, load_layout, sample_distractor_placements, sample_object_placements
+)
 import pytest
 
 _CONFIG_DIR = Path(__file__).resolve().parents[1] / 'config'
@@ -38,3 +40,33 @@ def test_same_seed_gives_same_layout(layout: dict) -> None:
     first = sample_object_placements(layout, random.Random(42))
     second = sample_object_placements(layout, random.Random(42))
     assert first == second
+
+
+@pytest.mark.parametrize('seed', range(200))
+def test_distractors_stay_in_their_area_away_from_objects(seed: int) -> None:
+    layout = load_layout(_CONFIG_DIR / 'layout_shapes.yaml')
+    area = layout['distractor_area']
+    rng = random.Random(seed)
+    objects = sample_object_placements(layout, rng)
+    distractors = sample_distractor_placements(layout, objects, rng)
+
+    assert [placement.label for placement in distractors] == [
+        spec['label'] for spec in layout['distractors']
+    ]
+    for index, placement in enumerate(distractors):
+        radius = math.hypot(placement.x, placement.y)
+        angle = math.degrees(math.atan2(placement.y, placement.x))
+        assert area['min_radius'] <= radius <= area['max_radius']
+        assert area['min_angle_deg'] <= angle <= area['max_angle_deg']
+        for other in objects + distractors[:index]:
+            distance = math.hypot(placement.x - other.x, placement.y - other.y)
+            assert distance >= area['min_separation']
+
+
+def test_distractors_do_not_change_object_placements() -> None:
+    layout = load_layout(_CONFIG_DIR / 'layout_shapes.yaml')
+    without = dict(layout, distractors=[])
+    assert sample_object_placements(layout, random.Random(24)) == sample_object_placements(
+        without, random.Random(24)
+    )
+    assert sample_distractor_placements(without, [], random.Random(24)) == []
