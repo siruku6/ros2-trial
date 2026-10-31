@@ -1,13 +1,15 @@
-"""文で指定した物体を画像から探す検出モデル 3 つを、同じ形で呼べるようにまとめる。
+"""文で指定した物体を画像から探す検出モデル 2 つを、同じ形で呼べるようにまとめる。
 
 どのモデルも、物体の名前（例: red_cube）と、それをモデルに渡す英語の文（例: "red cube"）の
 組を受け取り、画像の中で見つけた物体の枠と名前を返す。新たな学習はせず、公開されている
 学習済みの重みをそのまま使う。
 
-- YOLO-World: 文で指定した物体を枠で探す。Ultralytics の実装
-- OWLv2: 文で指定した物体を枠で探す。Hugging Face Transformers の実装
+- OWLv2: 文で指定した物体を枠で探す。Hugging Face Transformers の実装。AI 版はこれを使う
 - CLIP: 画像と文の近さを点数にする。物体を探す機能はないので、色の鮮やかな画素の
   かたまりを候補として切り出し、候補ごとに各文との近さを点数にする
+
+比べた 3 つめの YOLO-World は、色が同じで形の違う物体を見分けられず、使わないことにしたので
+外した（2026-10-27。比べたときのコードはコミット b571f66 にある）。
 
 どのモデルでも、まず物体の候補の枠ごとに、名前ごとの点数を求める。そのあと、同じ名前の物体は
 机の上に 1 個しかないものとして、名前と枠を 1 対 1 に、点数の合計が最も大きくなるように
@@ -19,7 +21,6 @@ torch などは NumPy 2 を要するので、このモジュールは仮想環�
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Protocol
 
 import numpy as np
@@ -85,24 +86,18 @@ class _DetectorBase:
 
 
 def create_detector(
-    model: str,
-    prompts: dict[str, str],
-    score_threshold: float,
-    model_cache: Path,
-    device: str = 'cuda',
+    model: str, prompts: dict[str, str], score_threshold: float, device: str = 'cuda'
 ) -> Detector:
-    """名前で選んだ検出モデルを用意する。初めて使うときは、重みを model_cache に取得する。
+    """名前で選んだ検出モデルを用意する。初めて使うときは、重みを HF_HOME の下に取得する。
 
     Parameters
     ----------
     model : str
-        "yolo_world"、"owlv2"、"clip" のどれか。
+        "owlv2" か "clip"。
     prompts : dict[str, str]
         物体の名前から、モデルに渡す英語の文への対応。例: {"red_cube": "red cube"}
     score_threshold : float
         これより点数の低い組み合わせは使わない。点数の意味はモデルごとに違う。
-    model_cache : Path
-        重みを置くディレクトリ。
     device : str
         推論に使う装置。"cuda" か "cpu"。
 
@@ -116,13 +111,11 @@ def create_detector(
     ValueError
         知らないモデルの名前を渡したとき。
     """
-    if model == 'yolo_world':
-        return YoloWorldDetector(prompts, score_threshold, model_cache, device)
     if model == 'owlv2':
         return Owlv2Detector(prompts, score_threshold, device)
     if model == 'clip':
         return ClipDetector(prompts, score_threshold, device)
-    raise ValueError(f'検出モデル {model} は使えません。yolo_world、owlv2、clip から選んでください')
+    raise ValueError(f'検出モデル {model} は使えません。owlv2 か clip を選んでください')
 
 
 def assign_labels(
@@ -183,53 +176,6 @@ def to_detections(
         Detection(label, candidates[index].scores[labels.index(label)], candidates[index].box)
         for label, index in assignment.items()
     ]
-
-
-class YoloWorldDetector(_DetectorBase):
-    """YOLO-World（Ultralytics）で物体を探す。"""
-
-    # 公開されている重みのうち、最も大きく正確なもの
-    _WEIGHTS = 'yolov8x-worldv2.pt'
-    # 名前ごとに出た枠のうち、重なりの割合（IoU）がこれ以上のものを、同じ物体の候補とみなす
-    _SAME_OBJECT_IOU = 0.6
-
-    def __init__(
-        self, prompts: dict[str, str], score_threshold: float, model_cache: Path, device: str
-    ) -> None:
-        from ultralytics import YOLOWorld
-
-        weights_path = model_cache / 'ultralytics' / self._WEIGHTS
-        weights_path.parent.mkdir(parents=True, exist_ok=True)
-        self.labels = list(prompts)
-        self._model = YOLOWorld(str(weights_path))
-        self._model.set_classes(list(prompts.values()))
-        self.score_threshold = score_threshold
-        self._device = device
-
-    def candidates(self, rgb_image: np.ndarray) -> list[Candidate]:
-        # Ultralytics は NumPy の画像を BGR とみなす。名前ごとに枠を出させ（agnostic_nms を
-        # 使わない）、同じ物体に出た枠をまとめて、1 つの候補の名前ごとの点数にする
-        result = self._model.predict(
-            np.ascontiguousarray(rgb_image[:, :, ::-1]),
-            conf=self.score_threshold,
-            device=self._device,
-            verbose=False,
-        )[0]
-        boxes = result.boxes
-        candidates: list[tuple[np.ndarray, np.ndarray]] = []
-        for box, score, class_index in sorted(
-            zip(boxes.xyxy.cpu().numpy(), boxes.conf.cpu().numpy(), boxes.cls.cpu().numpy()),
-            key=lambda item: -item[1],
-        ):
-            for candidate_box, scores in candidates:
-                if _iou(candidate_box, box) >= self._SAME_OBJECT_IOU:
-                    scores[int(class_index)] = max(scores[int(class_index)], float(score))
-                    break
-            else:
-                scores = np.zeros(len(self.labels))
-                scores[int(class_index)] = float(score)
-                candidates.append((box, scores))
-        return [Candidate(tuple(map(float, box)), tuple(scores)) for box, scores in candidates]
 
 
 class Owlv2Detector(_DetectorBase):
@@ -348,14 +294,3 @@ class ClipDetector(_DetectorBase):
                 min(top + box_height + self._CROP_MARGIN, height),
             ))
         return boxes
-
-
-def _iou(first: np.ndarray, second: np.ndarray) -> float:
-    """2 つの枠（左・上・右・下）の重なりの割合（共通部分の面積 / 合わせた面積）を返す。"""
-    width = max(0.0, min(first[2], second[2]) - max(first[0], second[0]))
-    height = max(0.0, min(first[3], second[3]) - max(first[1], second[1]))
-    overlap = width * height
-    area_first = (first[2] - first[0]) * (first[3] - first[1])
-    area_second = (second[2] - second[0]) * (second[3] - second[1])
-    union = area_first + area_second - overlap
-    return float(overlap / union) if union > 0 else 0.0
