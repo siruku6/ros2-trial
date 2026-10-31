@@ -13,3 +13,10 @@ object_detector:
     score_threshold: 0.1
     # 枠の中心を通る視線と交わらせる平面の高さ [m]
     plane_height: 0.035
+    # 処理を減らす設定（docs/design/261027_ai_detector.md の 9 章）
+    # 重みと計算を半精度（float16）にする。OWLv2 の推論が 144 ms から 52 ms になり、見分けは同じだった
+    half_precision: true
+    # 1 秒あたりの推論の回数の上限。0 なら、画像が届くたび（1 秒に約 5 枚）に推論する
+    max_rate: 2.0
+    # 腕が動いている間は推論しない
+    skip_while_arm_moves: true
