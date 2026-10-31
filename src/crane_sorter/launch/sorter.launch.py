@@ -20,10 +20,15 @@
 #   - use_sim_time の既定を true にした（Gazebo で使うため）。ただし自作の Python のノードは、
 #     Gazebo の時計を使わない（理由は pick_and_place_server.py と下の color_detector を参照）
 #   - 物体を探すノードの設定ファイルを渡すようにした
+#   - 物体を探すノードを、色の範囲で探す版と AI 版から選べるようにした
 
 """物体を探すノードと、掴んで箱に置く action のサーバを起動する launch。
 
 sim.launch.py で Gazebo を起動し、腕の制御の準備が終わってから起動する。
+物体を探すノードは、detector 引数で選ぶ。
+
+    ros2 launch crane_sorter sorter.launch.py              # 色の範囲で探す（案 B）
+    ros2 launch crane_sorter sorter.launch.py detector:=ai  # 検出モデルで探す（案 A）
 """
 
 import os
@@ -32,7 +37,8 @@ from ament_index_python.packages import get_package_share_directory
 from crane_plus_description.robot_description_loader import RobotDescriptionLoader
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
+from launch.substitutions import EqualsSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
 from moveit_configs_utils import MoveItConfigsBuilder
 
@@ -51,6 +57,12 @@ def generate_launch_description() -> LaunchDescription:
         default_value='true',
         choices=['true', 'false'],
         description='Gazebo の時計を使うなら true',
+    )
+    declare_detector = DeclareLaunchArgument(
+        'detector',
+        default_value='color',
+        choices=['color', 'ai'],
+        description='物体を探すノード。color は色の範囲で、ai は検出モデルで探す',
     )
 
     moveit_config = (
@@ -92,11 +104,28 @@ def generate_launch_description() -> LaunchDescription:
                 get_package_share_directory('crane_sorter'), 'config', 'color_detector.yaml'
             ),
         ],
+        condition=IfCondition(EqualsSubstitution(LaunchConfiguration('detector'), 'color')),
+    )
+
+    # AI 版は、検出モデルのライブラリ（NumPy 2 を要する）を入れた仮想環境の Python で動かす
+    object_detector = Node(
+        package='crane_sorter',
+        executable='object_detector',
+        output='screen',
+        prefix=os.path.join(os.environ.get('AI_VENV', '/opt/ai-venv'), 'bin', 'python'),
+        parameters=[
+            os.path.join(
+                get_package_share_directory('crane_sorter'), 'config', 'object_detector.yaml'
+            ),
+        ],
+        condition=IfCondition(EqualsSubstitution(LaunchConfiguration('detector'), 'ai')),
     )
 
     return LaunchDescription([
         declare_loaded_description,
         declare_use_sim_time,
+        declare_detector,
         pick_and_place_server,
         color_detector,
+        object_detector,
     ])

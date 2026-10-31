@@ -2,7 +2,7 @@
 # 物体と箱の位置は tf から読む。物体は object_<object_label>、箱は box_<box_name> という座標系になっている。
 
 # ゴール（依頼の内容）
-string object_label  # 掴む物体の名前。例: "blue"
+string object_label  # 掴む物体の名前。例: "blue_cube"
 string box_name      # 置く箱の名前。例: "right"
 ---
 # 結果

@@ -1,0 +1,15 @@
+# object_detector ノード（AI 版の物体を探すノード）の設定。
+# labels は物体の名前（layout_shapes.yaml の label）、prompts はそれぞれを検出モデルに渡す英語の文。
+# 2 つのリストは同じ順に並べる。物体を増やすときは、学習し直さずに、ここに名前と文を足せばよい。
+object_detector:
+  ros__parameters:
+    labels: [red_cube, red_cuboid, blue_cube, green_cuboid]
+    # 形の言い方は、検出モデルを比べたときに最もよく見分けられたもの
+    prompts: [red square block, red long block, blue square block, green long block]
+    # 検出モデル。yolo_world、owlv2、clip のどれか（比べた結果は docs/design/261027_ai_detector.md）
+    model: owlv2
+    # これより点数の低い組み合わせは使わない。点数の意味はモデルごとに違い、
+    # 比べたときは yolo_world 0.05、owlv2 0.1、clip 0.3 にした
+    score_threshold: 0.1
+    # 枠の中心を通る視線と交わらせる平面の高さ [m]
+    plane_height: 0.035

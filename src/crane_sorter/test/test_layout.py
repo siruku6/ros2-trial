@@ -5,12 +5,12 @@ import random
 from crane_sorter.layout import box_placements, load_layout, sample_object_placements
 import pytest
 
-_LAYOUT_PATH = Path(__file__).resolve().parents[1] / 'config' / 'layout.yaml'
+_CONFIG_DIR = Path(__file__).resolve().parents[1] / 'config'
 
 
-@pytest.fixture(scope='module')
-def layout() -> dict:
-    return load_layout(_LAYOUT_PATH)
+@pytest.fixture(scope='module', params=['layout.yaml', 'layout_shapes.yaml'])
+def layout(request: pytest.FixtureRequest) -> dict:
+    return load_layout(_CONFIG_DIR / request.param)
 
 
 @pytest.mark.parametrize('seed', range(200))

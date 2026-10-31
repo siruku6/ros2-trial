@@ -1,0 +1,48 @@
+# 仕分けの環境の配置（AI 版の物体を探すノード用）。layout.yaml と物体だけが違う。
+# 同じ色で形の違う物体（赤いキューブと赤い直方体）を置き、色だけでは見分けられないようにする。
+# 座標はすべて腕の根元（crane_plus_base）から見た値で、単位は m。
+# x は腕の正面、y は腕から見て左が正。sim.launch.py がこのファイルを読み、Gazebo に箱と物体を置く。
+
+# 箱。物体を落として入れるので、壁は低い。
+# 左の箱を x = 0 に置くとカメラ台の脚と重なるので、少し前にずらしている。
+boxes:
+  - name: right
+    x: 0.04
+    y: -0.23
+  - name: left
+    x: 0.04
+    y: 0.23
+box_shape:
+  outer_size: 0.13
+  wall_height: 0.03
+  wall_thickness: 0.005
+  color: [0.85, 0.85, 0.85]
+
+# 物体。label は tf の座標系の名前（object_<label>）と、指示の中の物体の名前に使う。
+# label は「色_形」とし、指示の解釈（instruction.py）が文から作る名前とそろえる。
+# shape は cube（キューブ）か cuboid（直方体。腕の根元から離れる向きに長い）。
+objects:
+  - label: red_cube
+    shape: cube
+    color: [0.8, 0.05, 0.05]
+  - label: red_cuboid
+    shape: cuboid
+    color: [0.8, 0.05, 0.05]
+  - label: blue_cube
+    shape: cube
+    color: [0.05, 0.1, 0.8]
+  - label: green_cuboid
+    shape: cuboid
+    color: [0.05, 0.6, 0.05]
+# 物体の幅と高さ [m]。直方体の長さは幅の 1.6 倍
+object_size: 0.05
+
+# 物体を置く範囲。起動のたびに、この扇形の中からランダムに選ぶ。
+# 腕が真上から掴める範囲（根元から 0.18〜0.29 m）と、カメラの視野の両方に収まるようにしている。
+spawn_area:
+  min_radius: 0.20
+  max_radius: 0.26
+  min_angle_deg: -30.0
+  max_angle_deg: 45.0
+  min_separation: 0.10    # 物体どうしの中心の距離の下限。掴むときに指が隣の物体に当たらないように
+  min_box_distance: 0.15  # 物体の中心と箱の中心の距離の下限
