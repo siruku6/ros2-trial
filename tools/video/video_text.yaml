@@ -38,4 +38,4 @@ left_box_label: 左の箱
 # 最後の画面の長さ [s] と、出す文字（1 行ずつ）。空のリスト（[]）なら最後の画面を付けない
 end_card_seconds: 4
 end_card:
-  - github.com/siruku6/ros2-trial
+  - github.com/anonymus-acc/ros2-trial
