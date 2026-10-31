@@ -2,13 +2,11 @@
 # Latest releases on 2026-10-27, pinned so that a rebuild gives the same environment.
 # They pull in NumPy 2, which is why they are kept out of the system Python (README §3.3).
 torch==2.14.1
+# OWLv2 uses its box operations; it also brings in Pillow
 torchvision==0.29.1
-# YOLO-World
-ultralytics==8.4.190
-# YOLO-World encodes the text with CLIP from this package. Ultralytics pip-installs it on first
-# use when missing, so it is installed here instead.
-clip @ git+https://github.com/ultralytics/CLIP.git@7ffa84b3bfa40c42ecc1c77147a855e69cb2dd40
 # OWLv2 and CLIP
 transformers==5.21.0
+# Image conversion and drawing in the detector node. The system's OpenCV is built for NumPy 1.
+opencv-python-headless==5.0.0.93
 # rclpy imports yaml; the venv does not see the system's apt packages.
 pyyaml==6.0.3

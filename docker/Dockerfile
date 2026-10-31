@@ -45,15 +45,6 @@ ENV MODEL_CACHE=/opt/model-cache
 ENV HF_HOME=${MODEL_CACHE}/huggingface
 RUN mkdir -p "${MODEL_CACHE}" && chown 1000:1000 "${MODEL_CACHE}"
 
-# Ultralytics reads its settings from YOLO_CONFIG_DIR. Its default weights directory is relative
-# to the current directory, which put CLIP weights into the repo, and it sends usage data unless
-# sync is off. Both are set here, before the first import at runtime.
-ENV YOLO_CONFIG_DIR=/opt/ultralytics
-RUN mkdir -p "${YOLO_CONFIG_DIR}" \
-    && "${AI_VENV}/bin/python" -c "from ultralytics import settings; \
-settings.update(weights_dir='${MODEL_CACHE}/ultralytics', sync=False)" \
-    && chown -R 1000:1000 "${YOLO_CONFIG_DIR}"
-
 # Login shells (docker compose exec ... bash -l) read /etc/profile.d;
 # terminals opened on the noVNC desktop read /etc/bash.bashrc.
 COPY docker/ros_env.sh /etc/profile.d/ros2_trial.sh
