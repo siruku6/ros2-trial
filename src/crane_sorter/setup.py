@@ -19,7 +19,7 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='sirukufarios',
-    maintainer_email='12032476+siruku6@users.noreply.github.com',
+    maintainer_email='sirukufarios@users.noreply.github.com',
     description='Sort objects on a table into boxes with CRANE+ V2 in Gazebo',
     license='MIT AND Apache-2.0',
     tests_require=['pytest'],

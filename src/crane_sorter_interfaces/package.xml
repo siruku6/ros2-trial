@@ -4,7 +4,7 @@
   <name>crane_sorter_interfaces</name>
   <version>0.1.0</version>
   <description>Action definition for sorting objects with CRANE+ V2</description>
-  <maintainer email="12032476+siruku6@users.noreply.github.com">sirukufarios</maintainer>
+  <maintainer email="sirukufarios@users.noreply.github.com">sirukufarios</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
