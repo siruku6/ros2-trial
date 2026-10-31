@@ -30,7 +30,7 @@ text instruction and places it in the named box, on ROS 2 Jazzy.
 ## Rules from the assignment
 
 - No real name, affiliation or email in any file, commit, video or report. Commits must be
-  authored as `sirukufarios <12032476+siruku6@users.noreply.github.com>`; check `git config user.name`
+  authored as `sirukufarios <sirukufarios@users.noreply.github.com>`; check `git config user.name`
   and `git config user.email` before the first commit in a new clone.
 - Code reused from rt-net/crane_plus must be credited in README and the report, and kept
   separate from code written here.
