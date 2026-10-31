@@ -1,0 +1,36 @@
+# 提出用の動画に出す文字と、再生の速さ。edit_video.py が読む。
+# ここを書き換えて edit_video.py を実行し直せば、撮り直さずに動画を作り直せる。
+# 文字を空（''）にした項目は、画面に出さない。
+
+# 再生の速さ。動画の全体をこの速さにする。
+# 課題 PDF は 2 倍速まで認め、倍速にしたら明記することを求めている
+speed: 1.5
+# 速さの表示。{speed} が速さの数字になる。speed が 1 のときは出さない
+speed_label: '{speed}倍速'
+
+# 始めに、指示を送る前の机を見せる長さ [s]（動画の上の秒数）と、そのとき下に出す題名
+intro_seconds: 5
+title: 文の指示で、色が同じで形の違う物体を見分けて仕分ける
+
+# 指示ごとに下に出す字幕。{index} は何番目か、{total} は指示の数、{text} は指示の文
+instruction_caption: '指示 {index}/{total}「{text}」'
+
+# 最後の指示が終わったあとに見せる長さ [s] と、そのときの字幕
+closing_seconds: 2
+closing_caption: ''
+
+# 3 つの画面の見出し
+gazebo_heading: シミュレーション（Gazebo）
+detection_heading: カメラ画像と検出結果（OWLv2）
+terminal_heading: 指示を送る端末
+# 指示を送る端末を出すか（true / false）
+show_terminal: true
+
+# 箱の札。左右は腕から見た向き（視点が腕と向かい合っているので、画面では左右が逆に映る）
+right_box_label: 右の箱
+left_box_label: 左の箱
+
+# 最後の画面の長さ [s] と、出す文字（1 行ずつ）。空のリスト（[]）なら最後の画面を付けない
+end_card_seconds: 4
+end_card:
+  - github.com/siruku6/ros2-trial
