@@ -2,6 +2,7 @@
 
 import math
 import threading
+import time
 
 from crane_sorter import arm
 from crane_sorter.arm import CranePlusArm
@@ -54,6 +55,11 @@ class PickAndPlaceServer(Node):
         self._max_object_age = Duration(
             seconds=self.declare_parameter('max_object_age', 1.0).value
         )
+        # 物体の位置が古いときに、新しくなるのを待つ時間の上限 [s]。AI 版の物体を探すノードは、
+        # 腕が動いている間は物体を探さないので、腕が止まった直後は位置が古いことがある
+        self._object_wait_seconds: float = self.declare_parameter(
+            'object_wait_seconds', 3.0
+        ).value
         # 閉じたあとの角度が、閉じきった角度（10 度）からこの角度以内なら、掴み損ねとみなす。
         # 5 cm のキューブを掴むと約 6 度で止まり、何もないと 10 度まで閉じた（2026-10-25）
         self._empty_grasp_margin = math.radians(
@@ -219,23 +225,32 @@ class PickAndPlaceServer(Node):
 
         鮮度は、物体の座標系と腕の関節の座標系が最後に更新された時刻の差で測る。
         どちらにも Gazebo の時計の時刻が付いているので、このノードが Gazebo の時計を使わなくても比べられる。
+        位置が古ければ、新しくなるまで object_wait_seconds 秒まで待つ。
         """
         frame = f'{_OBJECT_FRAME_PREFIX}{label}'
-        transform = self._lookup_transform(frame)
+        deadline = time.monotonic() + self._object_wait_seconds
+        while True:
+            transform = self._lookup_transform(frame)
+            robot_state = self._lookup_transform(_ROBOT_STATE_FRAME)
+            age = None
+            if transform is not None and robot_state is not None:
+                age = (
+                    Time.from_msg(robot_state.header.stamp) - Time.from_msg(transform.header.stamp)
+                )
+                if age <= self._max_object_age:
+                    self.get_logger().info(
+                        f'物体 {label} の位置は、腕の状態より {age.nanoseconds / 1e9:.2f} 秒前の検出'
+                    )
+                    return _position_of(transform)
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(0.1)
+
         if transform is None:
             raise _StepFailed(f'物体 {label} が見つかりません（tf の {frame} がありません）')
-        robot_state = self._lookup_transform(_ROBOT_STATE_FRAME)
         if robot_state is None:
             raise _StepFailed(f'腕の状態を読めません（tf の {_ROBOT_STATE_FRAME} がありません）')
-        age = Time.from_msg(robot_state.header.stamp) - Time.from_msg(transform.header.stamp)
-        self.get_logger().info(
-            f'物体 {label} の位置は、腕の状態より {age.nanoseconds / 1e9:.2f} 秒前の検出'
-        )
-        if age > self._max_object_age:
-            raise _StepFailed(
-                f'物体 {label} が {age.nanoseconds / 1e9:.1f} 秒前から見えていません'
-            )
-        return _position_of(transform)
+        raise _StepFailed(f'物体 {label} が {age.nanoseconds / 1e9:.1f} 秒前から見えていません')
 
     def _lookup_box(self, name: str) -> Point:
         """箱の位置を tf から読む。"""

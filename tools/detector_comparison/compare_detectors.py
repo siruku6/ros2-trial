@@ -57,6 +57,8 @@ def main() -> None:
     parser.add_argument('--phrasings', nargs='+', default=list(_SHAPE_PHRASINGS))
     parser.add_argument('--plane-height', type=float, default=0.035,
                         help='枠の中心を通る視線と交わらせる平面の高さ [m]')
+    parser.add_argument('--half-precision', action='store_true',
+                        help='モデルの重みと計算を半精度（float16）にする')
     parser.add_argument('--tolerance', type=float, default=0.02,
                         help='正しく見つけたとみなす、正しい位置との水平の距離の上限 [m]')
     args = parser.parse_args()
@@ -103,7 +105,9 @@ def _evaluate(
 ) -> dict:
     """1 つのモデルと言い方の組で、全部の画像を処理して結果をまとめる。"""
     load_start = time.perf_counter()
-    detector = create_detector(model, prompts, _SCORE_THRESHOLDS[model])
+    detector = create_detector(
+        model, prompts, _SCORE_THRESHOLDS[model], half_precision=args.half_precision
+    )
     load_seconds = time.perf_counter() - load_start
     # 最初の 1 回は GPU の準備に時間がかかるので、速さの計測から外す
     detector.detect(samples[0].rgb_image)

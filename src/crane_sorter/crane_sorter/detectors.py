@@ -86,7 +86,11 @@ class _DetectorBase:
 
 
 def create_detector(
-    model: str, prompts: dict[str, str], score_threshold: float, device: str = 'cuda'
+    model: str,
+    prompts: dict[str, str],
+    score_threshold: float,
+    device: str = 'cuda',
+    half_precision: bool = False,
 ) -> Detector:
     """名前で選んだ検出モデルを用意する。初めて使うときは、重みを HF_HOME の下に取得する。
 
@@ -100,6 +104,8 @@ def create_detector(
         これより点数の低い組み合わせは使わない。点数の意味はモデルごとに違う。
     device : str
         推論に使う装置。"cuda" か "cpu"。
+    half_precision : bool
+        True なら、モデルの重みと計算を半精度（float16）にする。GPU で速くなる。
 
     Returns
     -------
@@ -112,9 +118,9 @@ def create_detector(
         知らないモデルの名前を渡したとき。
     """
     if model == 'owlv2':
-        return Owlv2Detector(prompts, score_threshold, device)
+        return Owlv2Detector(prompts, score_threshold, device, half_precision)
     if model == 'clip':
-        return ClipDetector(prompts, score_threshold, device)
+        return ClipDetector(prompts, score_threshold, device, half_precision)
     raise ValueError(f'検出モデル {model} は使えません。owlv2 か clip を選んでください')
 
 
@@ -185,13 +191,19 @@ class Owlv2Detector(_DetectorBase):
     # 重なった枠を 1 つにまとめるときの、重なりの割合（IoU）の上限
     _NMS_IOU = 0.3
 
-    def __init__(self, prompts: dict[str, str], score_threshold: float, device: str) -> None:
+    def __init__(
+        self, prompts: dict[str, str], score_threshold: float, device: str, half_precision: bool
+    ) -> None:
+        import torch
         from transformers import Owlv2ForObjectDetection, Owlv2Processor
 
         self.labels = list(prompts)
         self._texts = [list(prompts.values())]
+        self._dtype = torch.float16 if half_precision else torch.float32
         self._processor = Owlv2Processor.from_pretrained(self._MODEL_ID)
-        self._model = Owlv2ForObjectDetection.from_pretrained(self._MODEL_ID).to(device).eval()
+        self._model = Owlv2ForObjectDetection.from_pretrained(
+            self._MODEL_ID, dtype=self._dtype
+        ).to(device).eval()
         self.score_threshold = score_threshold
         self._device = device
 
@@ -201,13 +213,14 @@ class Owlv2Detector(_DetectorBase):
 
         inputs = self._processor(text=self._texts, images=rgb_image, return_tensors='pt')
         inputs = inputs.to(self._device)
+        inputs['pixel_values'] = inputs['pixel_values'].to(self._dtype)
         with torch.no_grad():
             outputs = self._model(**inputs)
-        # 画像を細かく区切った区画ごとに、枠 1 つと、文ごとの点数が出る
-        scores = torch.sigmoid(outputs.logits[0])
+        # 画像を細かく区切った区画ごとに、枠 1 つと、文ごとの点数が出る。後処理は単精度で行う
+        scores = torch.sigmoid(outputs.logits[0].float())
         # OWLv2 は画像を正方形に埋めてから処理するので、枠は正方形の大きさで画素に戻す
         side = max(rgb_image.shape[:2])
-        boxes = box_convert(outputs.pred_boxes[0], 'cxcywh', 'xyxy') * side
+        boxes = box_convert(outputs.pred_boxes[0].float(), 'cxcywh', 'xyxy') * side
         best_scores = scores.max(dim=1).values
         keep = best_scores >= self.score_threshold
         boxes, scores, best_scores = boxes[keep], scores[keep], best_scores[keep]
@@ -233,15 +246,20 @@ class ClipDetector(_DetectorBase):
     # どの物体でもない候補を捨てるために、一緒に比べる文
     _NEGATIVE_PROMPTS = ('wooden table', 'gray tray', 'robot arm')
 
-    def __init__(self, prompts: dict[str, str], score_threshold: float, device: str) -> None:
+    def __init__(
+        self, prompts: dict[str, str], score_threshold: float, device: str, half_precision: bool
+    ) -> None:
         import torch
         from transformers import CLIPModel, CLIPProcessor
 
         self.labels = list(prompts)
         texts = [f'a photo of a {text}' for text in prompts.values()]
         texts += [f'a photo of a {text}' for text in self._NEGATIVE_PROMPTS]
+        self._dtype = torch.float16 if half_precision else torch.float32
         self._processor = CLIPProcessor.from_pretrained(self._MODEL_ID)
-        self._model = CLIPModel.from_pretrained(self._MODEL_ID).to(device).eval()
+        self._model = CLIPModel.from_pretrained(
+            self._MODEL_ID, dtype=self._dtype
+        ).to(device).eval()
         with torch.no_grad():
             text_inputs = self._processor(text=texts, return_tensors='pt', padding=True)
             # Transformers 5 では、射影したあとの特徴量は pooler_output に入る
@@ -259,10 +277,12 @@ class ClipDetector(_DetectorBase):
         crops = [rgb_image[top:bottom, left:right] for left, top, right, bottom in boxes]
         with torch.no_grad():
             image_inputs = self._processor(images=crops, return_tensors='pt').to(self._device)
+            image_inputs['pixel_values'] = image_inputs['pixel_values'].to(self._dtype)
             image_features = self._model.get_image_features(**image_inputs).pooler_output
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
             scale = self._model.logit_scale.exp()
-            probabilities = (scale * image_features @ self._text_features.T).softmax(dim=-1)
+            logits = scale * image_features @ self._text_features.T
+            probabilities = logits.float().softmax(dim=-1)
         return [
             Candidate(tuple(map(float, box)), tuple(map(float, row[:len(self.labels)])))
             for box, row in zip(boxes, probabilities.cpu().numpy())
