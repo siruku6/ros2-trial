@@ -4,7 +4,7 @@
   <name>crane_sorter</name>
   <version>0.1.0</version>
   <description>Sort objects on a table into boxes with CRANE+ V2 in Gazebo</description>
-  <maintainer email="12032476+siruku6@users.noreply.github.com">siruku6</maintainer>
+  <maintainer email="12032476+siruku6@users.noreply.github.com">sirukufarios</maintainer>
   <!-- Files derived from rt-net/crane_plus keep the Apache License 2.0; see LICENSE.crane_plus. -->
   <license>MIT</license>
   <license>Apache-2.0</license>

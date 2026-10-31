@@ -225,7 +225,7 @@ Claude の作業は 10/29 の分まで終わり、提出者の確認が残って
 | 本命の案 | 案 A | 2.1 のとおり |
 | 画面の見方 | noVNC を SSH 経由でブラウザから見る | GPU マシンはモニタのない遠隔マシン |
 | 分担 | 開発は Claude。提出者は理解・検討・判断・動作確認に 5〜10 時間 | 提出者の時間を判断に使うため |
-| git のコミット作者 | 名前 `siruku6`、メールアドレス `12032476+siruku6@users.noreply.github.com`（GitHub が用意する匿名のアドレス）。最初のコミットも書き換えて main に強制 push 済み | 課題は提出物に氏名とメールアドレスを載せることを禁じている。public リポジトリでは、コミット履歴に作者の名前とメールアドレスが残る |
+| git のコミット作者 | 名前 `sirukufarios`、メールアドレス `12032476+siruku6@users.noreply.github.com`（GitHub が用意する匿名のアドレス）。最初のコミットも書き換えて main に強制 push 済み | 課題は提出物に氏名とメールアドレスを載せることを禁じている。public リポジトリでは、コミット履歴に作者の名前とメールアドレスが残る |
 
 2026-10-27 に、提出者が次を決めました。
 
@@ -246,10 +246,17 @@ Claude の作業は 10/29 の分まで終わり、提出者の確認が残って
 
 2026-10-28 に、動画とレポートについて提出者が決めたことは、[動画とレポートの方針](261027_video_and_report_plan.md)の 5 章にあります。
 
+2026-10-31 に、提出者が次を決めました。
+
+| 項目 | 決めたこと |
+|---|---|
+| 提出用のリポジトリ | https://github.com/anonymus-acc/ros2-trial 。動画の最後の画面とレポートに出す URL もこれにする（issue #21） |
+| コミットの作成者名 | `siruku6` から `sirukufarios` に変える。全履歴の作成者名を書き換え、元のリポジトリと提出用のリポジトリの両方に push する。メールアドレスは上の匿名のアドレスのまま（issue #22） |
+
 git の作者の設定はクローンごとに要るので、GPU マシンでクローンしたら次を実行します。
 
 ```bash
-git config --local user.name siruku6
+git config --local user.name sirukufarios
 git config --local user.email 12032476+siruku6@users.noreply.github.com
 ```
 
