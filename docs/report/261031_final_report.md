@@ -16,7 +16,7 @@ Physical AI 応用1講座 最終課題レポート
 
 | | |
 |---|---|
-| 動画 | （YouTube の URL を記入） |
+| 動画 | https://youtu.be/LNO8KtAbae4 （1.5 倍速） |
 | リポジトリ | https://github.com/anonymus-acc/ros2-trial （実行手順は README に記載） |
 
 ---

@@ -225,3 +225,6 @@ __marimo__/
 
 
 tmp/
+
+# macOS Finder metadata
+.DS_Store
